@@ -1,0 +1,42 @@
+---
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+#RSM
+
+
+###Check your data
+```{r, echo = TRUE}
+setwd("C:\\Users\\anast\\Documents\\R")
+data <-read.csv(file="sensitivityanalysis2.csv",head=TRUE,sep=",")
+data
+```
+
+###Full quadratic fitting
+```{r, echo = TRUE}
+#linear terms:
+b1=data$TotalMolarFlow; 
+b2=data$FeedTemperature;
+b3=data$ColumnRefluxRatio;
+
+#quadratic terms:
+b11=data$TotalMolarFlow*data$TotalMolarFlow;
+b22=data$FeedTemperature*data$FeedTemperature;
+b33=data$ColumnRefluxRatio*data$ColumnRefluxRatio;
+
+#Interaction terms:
+b12=data$TotalMolarFlow*data$FeedTemperature;
+b13=data$TotalMolarFlow*data$ColumnRefluxRatio;
+b23=data$FeedTemperature*data$ColumnRefluxRatio;
+
+y=data$GlycerolMoleFraction;
+
+
+#generates the quadratic regression model results and summary of the statistical analysis
+quadratic.model <-lm(y ~ b1+b2+b3+b12+b13+b23+b11+b22+b33,data=data)
+summary(quadratic.model)
+coefficients(quadratic.model)
+```

@@ -1,0 +1,31 @@
+---
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+##Correlogram
+
+###General
+```{r, echo = TRUE}
+install.packages("corrplot")
+
+install.packages("olsrr")
+```
+###General
+```{r, echo = TRUE}
+library(corrplot)
+library(olsrr)
+#setup with where the data file is located at, modify for own file
+setwd("C:\\Users\\anast\\Documents\\R")
+#reading the data
+data <- read.csv(file = "sensitivityanalysis2.csv", head = TRUE, sep = ",")
+#initializing the data to be used
+data=data[c(1:39),c(1:7)];
+M <- cor(data)
+library(corrplot)
+#making the correlogram
+corrplot(M, method = "circle")
+```
+

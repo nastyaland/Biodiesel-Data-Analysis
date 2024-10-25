@@ -1,0 +1,113 @@
+---
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+##MARS
+
+
+###General
+#importing and installing all the necessary packages
+```{r, echo = TRUE}
+install.packages("dplyr")
+install.packages("ggplot2")
+install.packages("earth")
+install.packages("caret")
+library(dplyr)
+library(ggplot2)
+library(earth)
+library(caret)
+```
+
+###Data
+#loading up the data and reading the csv file
+```{r, echo = TRUE}
+setwd("C:\\Users\\anast\\Documents\\R")
+data <-read.csv(file="sensitivityanalysis2.csv",head=TRUE,sep=",")
+data
+```
+
+###MARS
+```{r, echo = TRUE}
+library(dplyr)
+library(ggplot2)
+library(earth)
+library(caret)
+datax=data[c(1:811),c(1:3)];
+mars1 <-earth(data$GlycerolMoleFraction ~ ., data = datax,degree=3)
+print(mars1)
+summary(mars1)
+plot(mars1)
+
+#uses a grid to characterize all the data inputs
+prediction <- predict(mars1,datax)
+prediction
+hyper_grid <- expand.grid(
+  degree = 1:3, 
+  nprune = seq(2, 100, length.out = 10) %>% floor()
+)
+head(hyper_grid)
+set.seed(123)  # for reproducibility
+#trains the MARS model to create regressions using a grid search
+cv_mars <- train(
+  x = subset(datax),
+  y = data$GlycerolMoleFraction,
+  method = "earth",
+  metric = "RMSE",
+  trControl = trainControl(method = "cv", number = 10),
+  tuneGrid = hyper_grid
+)
+#finds the best results from predictions and gets the model summary
+cv_mars$bestTune
+cv_mars$results %>%
+  filter(nprune == cv_mars$bestTune$nprune, degree == cv_mars$bestTune$degree)
+ggplot(cv_mars)
+summary(cv_mars)
+prediction <- predict(cv_mars,datax)
+prediction
+```
+
+###Plotting the subset regressions 
+
+###Views how the total molar flow and glycerol mole frac affect each other
+```{r}
+cv_mars$resample
+library(pdp)
+library(vip)
+p1 <- partial(cv_mars, pred.var = "TotalMolarFlow", grid.resolution = 20)
+
+  plot(p1, type ="l", xlab = "TotalMolarFlow", ylab = "GlycerolMoleFrac", lwd = 2, 
+  main = "GlycerolMoleFrac vs TotalMolarFlow")
+
+```
+###Views how the FeedTemperature and GlycerolMoleFrac affect each other
+```{r}
+p2 <- partial(cv_mars, pred.var = "FeedTemperature", grid.resolution = 20)
+
+  plot(p2, type ="l", xlab = "FeedTemperature", ylab = "GlycerolMoleFrac", lwd = 2, 
+  main = "GlycerolMoleFrac vs TotalMolarFlow")
+
+
+```
+###Views how the ColumnRefluxRatio and GlycerolMoleFrac affect each other
+```{r}
+p3 <- partial(cv_mars, pred.var = "ColumnRefluxRatio", grid.resolution = 20)
+
+  plot(p3, type ="l", xlab = "ColumnRefluxRatio", ylab = "GlycerolMoleFrac", lwd = 2, 
+  main = "GlycerolMoleFrac vs TotalMolarFlow")
+
+
+```
+
+###Making the 3D plot for all three variable
+```{r}
+p4 <- partial(cv_mars, pred.var = c("TotalMolarFlow", "ColumnRefluxRatio"), 
+              grid.resolution = 10) %>% 
+  plotPartial(levelplot = FALSE, zlab = "GlycerolMoleFrac", drape = TRUE, colorkey = TRUE, 
+              screen = list(z = -20, x = -60))
+
+  plot(p4)
+
+```
